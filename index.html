@@ -57,6 +57,83 @@
   .avoid { display: block; margin-top: 16px; font-size: 13.5px; color: #a5794c; cursor: pointer; user-select: none; }
   .avoid input { vertical-align: -2px; margin-right: 5px; accent-color: #ff6b35; }
 
+  /* 抽后选择:自己做 or 点外卖 */
+  .choice-row { display: flex; gap: 14px; justify-content: center; margin-top: 20px; }
+  .choice-row[hidden] { display: none; }
+  .choice-btn {
+    flex: 0 1 190px; padding: 13px 18px; font-size: 17px; font-weight: 700;
+    border: none; border-radius: 12px; cursor: pointer; color: #fff;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .choice-btn.cook { background: linear-gradient(135deg, #43c56d, #2ea44f); box-shadow: 0 8px 20px rgba(46, 164, 79, .3); }
+  .choice-btn.takeout { background: linear-gradient(135deg, #4aa3ff, #2f7de1); box-shadow: 0 8px 20px rgba(47, 125, 225, .3); }
+  .choice-btn:hover { transform: translateY(-2px); }
+  .choice-btn:active { transform: translateY(1px); }
+  @media (max-width: 480px) { .choice-row { flex-direction: column; align-items: center; } .choice-btn { width: 100%; } }
+
+  /* 弹窗 */
+  .modal-overlay {
+    position: fixed; inset: 0; z-index: 40;
+    background: rgba(74, 55, 40, .45);
+    display: flex; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay[hidden] { display: none; }
+  .modal-card {
+    position: relative; background: #fff; border-radius: 18px;
+    width: 100%; max-width: 540px; max-height: 84vh; overflow-y: auto;
+    padding: 26px 28px; box-shadow: 0 20px 60px rgba(60, 30, 10, .3);
+    animation: rise .25s ease;
+  }
+  @keyframes rise { from { transform: translateY(18px); opacity: 0; } to { transform: none; opacity: 1; } }
+  .modal-close {
+    position: absolute; top: 14px; right: 14px; width: 32px; height: 32px;
+    border: none; border-radius: 50%; background: #fff3e6; color: #a05a1a;
+    font-size: 18px; line-height: 1; cursor: pointer;
+  }
+  .modal-close:hover { background: #ffc180; }
+  .m-title { font-size: 23px; font-weight: 800; color: #d94f1e; margin-bottom: 4px; padding-right: 34px; }
+  .m-sub { color: #b98a5a; font-size: 13.5px; margin-bottom: 14px; }
+  .m-h { font-size: 15px; color: #7a4a1f; font-weight: 700; margin: 16px 0 8px; }
+  .m-ingredients {
+    background: #fff7ee; border: 1px solid #ffe3c2; border-radius: 12px;
+    padding: 12px 14px; font-size: 14.5px; line-height: 1.7; color: #6b4a26;
+  }
+  .m-steps { list-style: none; counter-reset: step; }
+  .m-steps li { counter-increment: step; display: flex; gap: 10px; padding: 7px 0; font-size: 14.5px; line-height: 1.65; color: #5a4128; }
+  .m-steps li::before {
+    content: counter(step); flex: 0 0 22px; height: 22px; margin-top: 1px;
+    background: #ffb03a; color: #fff; border-radius: 50%;
+    font-size: 12.5px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .m-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .m-btn {
+    flex: 1; padding: 11px 12px; border-radius: 10px; border: none; cursor: pointer;
+    font-size: 14.5px; font-weight: 600; background: #fff3e6; color: #a05a1a;
+  }
+  .m-btn.primary { background: linear-gradient(135deg, #ff8a3d, #ff5722); color: #fff; }
+  .m-btn:hover { filter: brightness(1.04); }
+
+  /* 店铺列表 */
+  .shop-item {
+    display: flex; align-items: center; gap: 12px; padding: 13px 14px;
+    border: 1px solid #ffe3c2; border-radius: 14px; margin-bottom: 10px; background: #fffdf9;
+  }
+  .shop-avatar {
+    flex: 0 0 44px; height: 44px; border-radius: 12px;
+    background: linear-gradient(135deg, #ffd9b3, #ffb03a);
+    display: flex; align-items: center; justify-content: center; font-size: 22px;
+  }
+  .shop-info { flex: 1; min-width: 0; }
+  .shop-name { font-weight: 700; font-size: 15.5px; color: #5a4128; }
+  .shop-rate { color: #ff8f1f; font-weight: 800; font-size: 14.5px; }
+  .shop-meta { font-size: 12.5px; color: #b09576; margin-top: 3px; }
+  .shop-go {
+    flex: 0 0 auto; border: none; background: #fff3e6; color: #ff5722;
+    font-weight: 700; padding: 8px 14px; border-radius: 999px; cursor: pointer; font-size: 13.5px;
+  }
+  .shop-go:hover { background: #ffe3c2; }
+
   /* 下半部分两栏 */
   .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-top: 20px; }
   @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
@@ -137,6 +214,10 @@
   <section class="card stage">
     <p class="hint" id="hint">点击下方按钮，让晚餐听天由命</p>
     <div class="display" id="display">？</div>
+    <div class="choice-row" id="choiceRow" hidden>
+      <button class="choice-btn cook" id="btnCook">👨‍🍳 自己做</button>
+      <button class="choice-btn takeout" id="btnTakeout">🛵 点外卖</button>
+    </div>
     <button class="draw-btn" id="drawBtn">开始抽奖 🎲</button>
     <label class="avoid"><input type="checkbox" id="avoidRecent" checked>避开最近抽过的菜（连续 3 次）</label>
   </section>
@@ -164,6 +245,13 @@
   <footer>菜单保存在你自己的浏览器里，随时增删你的私房菜 🥢（按空格键也可以抽）</footer>
 </main>
 
+<div class="modal-overlay" id="modal" hidden>
+  <div class="modal-card" role="dialog" aria-modal="true">
+    <button class="modal-close" id="modalClose" title="关闭">×</button>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -179,6 +267,51 @@
     '蚝油生菜', '蒜蓉西兰花', '韭菜炒蛋', '冬瓜排骨汤', '玉米排骨汤', '紫菜蛋花汤',
     '蛋炒饭', '扬州炒饭', '葱油拌面', '炸酱面', '饺子', '火锅', '麻辣香锅', '铁板牛柳'
   ];
+
+  /* 菜谱库:菜名 -> [食材, 步骤] */
+  var RECIPES = {
+    '红烧肉': ['五花肉500g、冰糖8粒、生抽2勺、老抽1勺、料酒、姜片、葱段', ['五花肉切块,冷水下锅加料酒焯水,捞出洗净','少油小火炒冰糖,至焦糖色冒小泡','下肉块翻炒上色,加料酒、生抽、老抽','加热水没过肉,放姜葱,小火焖45分钟','大火收汁至浓稠亮油即可']],
+    '可乐鸡翅': ['鸡翅中8个、可乐1罐、生抽2勺、姜片', ['鸡翅两面划两刀,冷水下锅焯水','少油把鸡翅煎至两面金黄','倒入可乐没过鸡翅,加生抽和姜片','中火煮15分钟','大火收汁至浓稠,撒芝麻更好']],
+    '糖醋排骨': ['排骨500g、糖4勺、醋4勺、生抽2勺、料酒1勺、姜', ['排骨冷水下锅焯水,捞出洗净','按1料酒2生抽3糖4醋调一碗糖醋汁','少油把排骨煎至表面微黄','倒入糖醋汁加热水没过,小火焖30分钟','大火收汁,撒白芝麻']],
+    '宫保鸡丁': ['鸡胸肉300g、熟花生米、干辣椒、花椒、葱姜蒜、生抽、醋、糖、淀粉', ['鸡肉切丁,用料酒和淀粉腌15分钟','调碗汁:生抽2勺+醋1勺+糖1勺+淀粉水','热油爆香干辣椒和花椒,下鸡丁炒至变色','加葱姜蒜炒香,倒入碗汁大火翻炒','起锅前拌入花生米']],
+    '鱼香肉丝': ['里脊肉丝300g、木耳丝、胡萝卜丝、青椒丝、豆瓣酱、葱姜蒜、糖、醋、淀粉', ['肉丝用料酒和淀粉腌15分钟','调鱼香汁:糖2勺+醋2勺+生抽1勺+淀粉水','热油炒豆瓣酱出红油','下肉丝炒至变色,加三丝翻炒1分钟','淋入鱼香汁,大火收匀出锅']],
+    '麻婆豆腐': ['嫩豆腐1盒、肉末80g、豆瓣酱1勺、花椒粉、蒜苗或葱花', ['豆腐切块,盐水里焯1分钟捞出','热油炒肉末至变色盛出','炒豆瓣酱出红油,加半碗水烧开','下豆腐轻推煮3分钟,勾薄芡','撒花椒粉和蒜苗碎出锅']],
+    '回锅肉': ['五花肉400g、蒜苗2根、豆瓣酱1勺、豆豉、甜面酱', ['五花肉整块冷水下锅煮至八成熟,晾凉切薄片','中火煸肉片至出油、边缘卷起','下豆瓣酱和豆豉炒出红油','加半勺甜面酱,下蒜苗段炒断生即可']],
+    '水煮肉片': ['里脊肉片300g、豆芽或生菜、豆瓣酱、干辣椒、花椒、蛋清、淀粉', ['肉片用蛋清、淀粉、盐腌20分钟','豆芽焯熟垫在大碗底','炒香豆瓣酱加水烧开,下肉片滑熟,连汤倒入碗中','肉片上撒干辣椒、花椒、蒜末','烧一勺热油泼上去激香']],
+    '酸菜鱼': ['草鱼1条、酸菜250g、泡椒、姜蒜、蛋清、淀粉', ['鱼片用蛋清、淀粉、盐腌15分钟','鱼骨煎至微黄盛出备用','炒香酸菜、泡椒、姜蒜','加热水煮开,放鱼骨煮10分钟后捞出','下鱼片煮1-2分钟至变白,撒干辣椒花椒,泼热油']],
+    '番茄炒蛋': ['番茄2个、鸡蛋3个、糖1勺、盐、葱花', ['鸡蛋加少许盐打散,热油炒至凝固盛出','番茄切块下锅,炒出汁水','加糖和盐调味','倒回鸡蛋翻炒均匀,撒葱花出锅']],
+    '青椒肉丝': ['里脊肉丝300g、青椒3个、蒜末、生抽、淀粉', ['肉丝用生抽和淀粉腌10分钟','热油滑炒肉丝至变色盛出','爆香蒜末,下青椒丝炒至断生','倒回肉丝,加生抽和盐炒匀出锅']],
+    '酸辣土豆丝': ['土豆2个、干辣椒3个、花椒10粒、蒜末、醋2勺', ['土豆切细丝,泡水洗去淀粉','热油爆香花椒、干辣椒和蒜末','大火下土豆丝快炒2分钟','沿锅边淋醋,加盐炒匀出锅']],
+    '土豆炖牛肉': ['牛腩500g、土豆2个、姜葱、八角1个、生抽、老抽', ['牛腩切块冷水下锅焯水','炒香姜葱八角,下牛腩翻炒','加生抽、老抽和热水,小火炖1小时','加土豆块再炖20分钟','大火收汁,加盐调味']],
+    '红烧茄子': ['茄子2根、蒜末、生抽2勺、糖1勺、淀粉、葱花', ['茄子切滚刀块,撒盐腌10分钟后挤干水','调酱汁:生抽2勺+糖1勺+淀粉水','茄子下锅煎至两面金黄','爆香蒜末,倒回茄子淋酱汁,翻炒裹匀撒葱花']],
+    '干煸四季豆': ['四季豆400g、肉末80g、干辣椒、花椒、芽菜', ['四季豆撕去老筋掰段','油烧至七成热,炸(或干煸)到虎皮起皱捞出','底油炒香肉末,加干辣椒、花椒、芽菜','倒回四季豆,加盐和少许糖炒匀']],
+    '白切鸡': ['三黄鸡半只、姜1块、葱2根、沙姜或姜葱蘸料', ['整鸡冷水下锅,加姜片葱段,水开转小火浸煮18分钟','捞出立刻泡冰水,皮爽肉嫩','斩件装盘','姜葱剁蓉+盐,浇热油激香,加生抽做蘸料']],
+    '清蒸鲈鱼': ['鲈鱼1条、姜丝、葱丝、蒸鱼豉油2勺', ['鱼身两面划刀,肚里塞姜片','水开后上锅大火蒸8分钟,关火再虚蒸2分钟','倒掉盘中蒸出的汁水,铺上葱丝','烧热油浇在葱丝上,盘边淋蒸鱼豉油']],
+    '蒜蓉虾': ['大虾500g、蒜1整头、盐、糖、葱花', ['大虾开背去虾线','蒜剁蓉,小火用油炒至金黄','下大虾中火煎至变红','加盐和少许糖炒匀,撒葱花']],
+    '木须肉': ['鸡蛋3个、里脊肉片200g、木耳、黄瓜半根、生抽', ['木耳提前泡发,黄瓜切菱形片','鸡蛋炒熟盛出','底油滑炒肉片变色,加木耳翻炒','加黄瓜片,倒回鸡蛋,加盐和生抽炒匀']],
+    '京酱肉丝': ['里脊肉丝300g、豆腐皮、大葱白、甜面酱3勺、糖1勺', ['肉丝用料酒和淀粉腌15分钟','温油把肉丝滑炒至变色盛出','底油下甜面酱和糖,小火炒出香味','倒回肉丝裹匀酱汁','豆腐皮切块,包葱丝和肉丝一起吃']],
+    '香菇滑鸡': ['鸡腿肉400g、干香菇8朵、姜片、蚝油、淀粉', ['香菇泡发切片(泡香菇的水留着)','鸡腿肉切块,用蚝油和淀粉腌20分钟','爆香姜片,下鸡肉炒至变色','加香菇和泡香菇的水,焖10分钟','大火收汁,撒葱花']],
+    '咖喱鸡肉': ['鸡腿肉400g、土豆1个、胡萝卜1根、洋葱半个、咖喱块4块', ['鸡肉切块,土豆胡萝卜切滚刀块','炒香洋葱,下鸡肉炒至变色','加土豆、胡萝卜和热水,煮15分钟','关火,放咖喱块搅拌至融化','小火再煮5分钟至浓稠,配米饭绝了']],
+    '番茄牛腩': ['牛腩500g、番茄3个、洋葱半个、姜片', ['牛腩切块焯水,番茄顶部划十字烫去皮切块','炒香洋葱和姜片,下牛腩翻炒','加一半番茄炒出汁,加热水小火炖1小时','加剩余番茄再炖30分钟','加盐调味,大火收汁']],
+    '辣子鸡': ['鸡腿肉500g、干辣椒1大碗、花椒1勺、白芝麻', ['鸡肉切小块,用料酒和盐腌20分钟','油烧至七成热,炸至金黄酥脆捞出','底油爆香姜蒜、干辣椒和花椒','倒回鸡块翻炒,加少许糖、撒芝麻']],
+    '蚝油生菜': ['生菜2颗、蒜末5瓣、蚝油2勺、生抽1勺', ['水开加少许盐和油,生菜烫15秒捞出装盘','热油爆香蒜末','加蚝油、生抽和2勺水烧开','把蒜蓉汁淋在生菜上']],
+    '蒜蓉西兰花': ['西兰花1颗、蒜6瓣、盐', ['西兰花掰小朵,盐水泡10分钟','水开焯1分钟捞出过凉','多油爆香蒜蓉','下西兰花大火翻炒,加盐出锅']],
+    '韭菜炒蛋': ['韭菜1把、鸡蛋3个、盐', ['韭菜洗净切段,鸡蛋加盐打散','热油把鸡蛋炒至凝固盛出','下韭菜大火炒10秒','倒回鸡蛋,加盐快速翻匀立刻出锅']],
+    '冬瓜排骨汤': ['排骨400g、冬瓜500g、姜3片、枸杞', ['排骨冷水下锅焯水','加姜片和足量热水,小火炖40分钟','冬瓜去皮切块,下锅再炖15分钟','加盐调味,撒枸杞和葱花']],
+    '玉米排骨汤': ['排骨400g、甜玉米2根、胡萝卜1根、姜3片', ['排骨焯水洗净','玉米切段,胡萝卜切滚刀块','全部下锅加姜片,小火炖50分钟','加盐调味即可,汤清甜不腻']],
+    '紫菜蛋花汤': ['紫菜1小块、鸡蛋2个、虾皮1勺、香油、葱花', ['水烧开,放入紫菜和虾皮','转小火,转圈淋入打散的蛋液','蛋花凝固后轻轻推开','加盐、香油、葱花出锅,前后不过5分钟']],
+    '蛋炒饭': ['隔夜米饭1碗、鸡蛋2个、葱花、火腿丁(可选)', ['鸡蛋打散,热锅热油滑炒至半凝固','下米饭压散,大火翻炒','加盐,炒至粒粒分明跳跳舞','撒葱花出锅,简单但见功夫']],
+    '扬州炒饭': ['隔夜米饭1碗、鸡蛋2个、虾仁、火腿丁、青豆、玉米粒', ['虾仁焯水,青豆玉米粒焯水','鸡蛋炒散盛出','炒香火腿丁和配菜,下米饭炒散','倒回鸡蛋和虾仁,加盐炒匀出锅']],
+    '葱油拌面': ['鲜面条300g、小葱1把、生抽2勺、老抽1勺、糖1勺', ['小葱切段,冷油下锅小火炸至焦黄捞出','葱油里加生抽、老抽、糖和小半碗水,烧开成酱汁','面条煮熟捞出,直接入锅拌酱','装盘撒葱酥,趁热拌匀']],
+    '炸酱面': ['鲜面条300g、五花肉末200g、干黄酱3勺、甜面酱1勺、黄瓜丝', ['干黄酱和甜面酱用半碗水澥开','炒肉末至出油微焦','倒入酱料小火熬10分钟,熬到油酱分离','面条煮熟码上黄瓜丝,浇2勺炸酱拌匀']],
+    '饺子': ['饺子皮500g、猪肉馅400g、白菜半棵、葱姜水、生抽、香油', ['肉馅分次加葱姜水,搅打上劲','白菜切碎挤干水,和调料一起拌进肉馅','包成饺子(馅别贪多,捏紧收口)','水开下锅,点两次凉水','饺子浮起鼓胀即熟,配醋和辣椒油']],
+    '火锅': ['火锅底料1块、肉片、丸子、豆腐、蔬菜、蘸料', ['底料加水煮开成锅底,耐煮的先下(土豆、藕片)','汤再滚开后再下肉类和丸子','易熟的最后涮(毛肚十几秒、青菜30秒)','麻酱碟或油碟按口味调,开涮!']],
+    '麻辣香锅': ['虾或午餐肉、丸子、藕片、土豆片、青菜、香锅底料1袋', ['肉类和丸子焯水煮熟,蔬菜焯至断生','炒锅下油,爆香葱姜蒜和香锅底料','按耐煮程度依次下食材大火翻炒','加糖和生抽调味,撒芝麻和花生']],
+    '铁板牛柳': ['牛里脊300g、洋葱半个、彩椒1个、黑胡椒酱或蚝油、淀粉', ['牛肉逆纹切条,用蚝油、淀粉和油腌20分钟','大火热锅,下牛柳快速滑炒至七成熟盛出','下洋葱彩椒炒至断生','倒回牛柳,加黑胡椒酱大火炒匀出锅']]
+  };
+
+  /* 店铺占位数据(未接入真实外卖平台) */
+  var SHOP_NAMES = ['店铺1', '店铺2', '店铺3', '店铺4', '店铺5'];
 
   function load() {
     var s = {};
@@ -198,7 +331,8 @@
   var $ = function (id) { return document.getElementById(id); };
   var display = $('display'), hint = $('hint'), drawBtn = $('drawBtn'),
       avoidRecentBox = $('avoidRecent'), dishList = $('dishList'), dishCount = $('dishCount'),
-      newDishInput = $('newDish'), historyList = $('historyList'), toastEl = $('toast');
+      newDishInput = $('newDish'), historyList = $('historyList'), toastEl = $('toast'),
+      choiceRow = $('choiceRow'), modal = $('modal'), modalBody = $('modalBody');
 
   function escapeHtml(str) {
     return String(str).replace(/[&<>"']/g, function (c) {
@@ -259,6 +393,8 @@
     }
 
     rolling = true;
+    choiceRow.hidden = true;
+    closeModal();
     drawBtn.disabled = true;
     drawBtn.textContent = '命运转轮转动中…';
     hint.textContent = '午餐还是晚餐，就看这一把！';
@@ -288,6 +424,8 @@
     drawBtn.textContent = '再抽一次 🎲';
     drawBtn.disabled = false;
     rolling = false;
+    currentWinner = winner;
+    choiceRow.hidden = false;
 
     state.history.unshift({ name: winner, ts: Date.now() });
     if (state.history.length > 200) state.history.length = 200;
@@ -396,6 +534,79 @@
     }
     requestAnimationFrame(tick);
   }
+
+  /* ---------- 抽后选择:自己做 or 点外卖 ---------- */
+
+  var currentWinner = null;
+
+  function openModal(html) {
+    modalBody.innerHTML = html;
+    modal.hidden = false;
+  }
+  function closeModal() {
+    modal.hidden = true;
+  }
+
+  function recipeHtml(name) {
+    var r = RECIPES[name];
+    var ing = r ? escapeHtml(r[0]) : '按自己的拿手做法准备主料和配料';
+    var sub = r ? '跟着做就行,翻车率很低' : '你的自定义菜 · 通用做法参考';
+    var steps = r ? r[1] : [
+      '食材洗净切配,主料提前用盐和料酒腌入味',
+      '热锅热油,先爆香葱姜蒜',
+      '下主料翻炒至变色断生',
+      '加配料和调味,炒熟或炖至入味',
+      '尝一下咸淡,调整后出锅装盘'
+    ];
+    return '<div class="m-title">👨‍🍳 ' + escapeHtml(name) + '</div>' +
+      '<div class="m-sub">' + sub + '</div>' +
+      '<div class="m-h">🧺 需要准备</div>' +
+      '<div class="m-ingredients">' + ing + '</div>' +
+      '<div class="m-h">🍳 做法步骤</div>' +
+      '<ol class="m-steps">' + steps.map(function (s) { return '<li>' + escapeHtml(s) + '</li>'; }).join('') + '</ol>' +
+      '<div class="m-actions">' +
+      '<button class="m-btn" id="mToTakeout">🛵 还是点外卖</button>' +
+      '<button class="m-btn primary" id="mRedraw">🎲 换一道</button>' +
+      '</div>';
+  }
+
+  function openShops(name) {
+    var h = 0;
+    for (var k = 0; k < name.length; k++) h = (h * 31 + name.charCodeAt(k)) % 997;
+    var items = SHOP_NAMES.map(function (base, i) {
+      var rate = (4.9 - i * 0.1).toFixed(1);
+      var sales = (3000 - i * 550 - h % 300) + '+';
+      var price = '¥' + (18 + (h + i * 7) % 45) + '/人';
+      var time = (22 + (h + i * 5) % 22) + '分钟';
+      var dist = ((h % 25) / 10 + i * 0.5).toFixed(1) + 'km';
+      return '<div class="shop-item">' +
+        '<div class="shop-avatar">🍽️</div>' +
+        '<div class="shop-info">' +
+        '<div class="shop-name">' + base + ' <span class="shop-rate">★ ' + rate + '</span></div>' +
+        '<div class="shop-meta">' + sales + ' · ' + price + ' · 配送约' + time + ' · ' + dist + '</div>' +
+        '<div class="shop-meta">招牌:' + escapeHtml(name) + '</div>' +
+        '</div>' +
+        '<button class="shop-go">进店 ›</button>' +
+        '</div>';
+    }).join('');
+    openModal('<div class="m-title">🛵 ' + escapeHtml(name) + ' · 附近高分店铺</div>' +
+      '<div class="m-sub">按评分排序 · 演示数据,接入外卖平台后可直达下单</div>' +
+      items +
+      '<div class="m-actions"><button class="m-btn" id="mToCook">👨‍🍳 还是自己做吧</button></div>');
+  }
+
+  $('btnCook').addEventListener('click', function () { openModal(recipeHtml(currentWinner)); });
+  $('btnTakeout').addEventListener('click', function () { openShops(currentWinner); });
+  $('modalClose').addEventListener('click', closeModal);
+  modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') closeModal(); });
+
+  modalBody.addEventListener('click', function (e) {
+    if (e.target.id === 'mToTakeout') { openShops(currentWinner); }
+    else if (e.target.id === 'mToCook') { openModal(recipeHtml(currentWinner)); }
+    else if (e.target.id === 'mRedraw') { closeModal(); draw(); }
+    else if (e.target.closest('.shop-go')) { toast('演示店铺:接入外卖平台后可直达下单 😋'); }
+  });
 
   /* ---------- 启动 ---------- */
   renderDishes();
