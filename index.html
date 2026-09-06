@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>今天吃什么 · 每日菜单抽奖</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Noto Sans SC", sans-serif;
+    background: linear-gradient(160deg, #fff6ec 0%, #ffe9d6 55%, #ffdfc2 100%);
+    min-height: 100vh;
+    color: #4a3728;
+  }
+  #confetti { position: fixed; inset: 0; pointer-events: none; z-index: 50; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 34px 20px 60px; }
+
+  header { text-align: center; margin-bottom: 22px; }
+  h1 { font-size: clamp(28px, 5vw, 38px); font-weight: 800; letter-spacing: 2px; }
+  .subtitle { color: #a5794c; margin-top: 8px; font-size: 15px; }
+
+  .card {
+    background: #fff;
+    border-radius: 18px;
+    box-shadow: 0 8px 30px rgba(180, 100, 40, .12);
+    padding: 22px 24px;
+  }
+
+  /* 抽奖舞台 */
+  .stage { text-align: center; padding: 36px 24px 32px; }
+  .hint { color: #b98a5a; font-size: 15px; margin-bottom: 16px; }
+  .display {
+    min-height: 118px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: clamp(30px, 6vw, 46px); font-weight: 800; color: #d94f1e;
+    border: 2px dashed #f0c9a0; border-radius: 16px;
+    background: #fffaf4;
+    padding: 16px 20px;
+    word-break: break-all;
+  }
+  .display.rolling { animation: shake .12s infinite; color: #e8823d; }
+  @keyframes shake { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+  .display.winner { animation: pop .55s ease; color: #ff5722; text-shadow: 0 4px 26px rgba(255, 87, 34, .4); }
+  @keyframes pop { 0% { transform: scale(1); } 40% { transform: scale(1.18); } 100% { transform: scale(1); } }
+
+  .draw-btn {
+    margin-top: 26px; padding: 15px 62px; font-size: 21px; font-weight: 700; color: #fff;
+    background: linear-gradient(135deg, #ff8a3d, #ff5722);
+    border: none; border-radius: 999px; cursor: pointer;
+    box-shadow: 0 10px 24px rgba(255, 87, 34, .35);
+    transition: transform .15s, box-shadow .15s, opacity .15s;
+  }
+  .draw-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 14px 30px rgba(255, 87, 34, .42); }
+  .draw-btn:active:not(:disabled) { transform: translateY(1px) scale(.98); }
+  .draw-btn:disabled { opacity: .55; cursor: wait; }
+
+  .avoid { display: block; margin-top: 16px; font-size: 13.5px; color: #a5794c; cursor: pointer; user-select: none; }
+  .avoid input { vertical-align: -2px; margin-right: 5px; accent-color: #ff6b35; }
+
+  /* 下半部分两栏 */
+  .grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 18px; margin-top: 20px; }
+  @media (max-width: 720px) { .grid { grid-template-columns: 1fr; } }
+  h2 { font-size: 17px; margin-bottom: 14px; color: #7a4a1f; }
+  h2 .count { font-weight: 400; font-size: 13px; color: #c39a6b; margin-left: 6px; }
+
+  .add-row { display: flex; gap: 8px; margin-bottom: 14px; }
+  .add-row input {
+    flex: 1; min-width: 0; padding: 10px 14px; font-size: 15px;
+    border: 2px solid #ffd9b3; border-radius: 10px; outline: none; color: #4a3728;
+  }
+  .add-row input:focus { border-color: #ff8a3d; }
+  .add-row button {
+    padding: 10px 20px; border: none; border-radius: 10px; cursor: pointer;
+    background: #ffb03a; color: #fff; font-weight: 600; font-size: 15px;
+  }
+  .add-row button:hover { background: #f79d12; }
+
+  #dishList {
+    list-style: none; display: flex; flex-wrap: wrap; gap: 8px;
+    max-height: 250px; overflow-y: auto; padding-bottom: 4px;
+  }
+  #dishList, #historyList { scrollbar-width: thin; scrollbar-color: #ecc79f transparent; }
+  #dishList::-webkit-scrollbar, #historyList::-webkit-scrollbar { width: 6px; }
+  #dishList::-webkit-scrollbar-thumb, #historyList::-webkit-scrollbar-thumb {
+    background: #ecc79f; border-radius: 999px;
+  }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: #fff3e6; border: 1px solid #ffd9b3; color: #8a4b12;
+    padding: 5px 7px 5px 12px; border-radius: 999px; font-size: 14px;
+  }
+  .chip .del {
+    border: none; background: #ffd9b3; color: #a05a1a; cursor: pointer;
+    width: 18px; height: 18px; border-radius: 50%; font-size: 13px; line-height: 1;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .chip .del:hover { background: #ffc180; color: #7a3804; }
+
+  .toolbar { margin-top: 14px; display: flex; gap: 14px; }
+  .toolbar button {
+    border: none; background: none; cursor: pointer; font-size: 13px;
+    color: #c08552; text-decoration: underline; text-underline-offset: 3px;
+  }
+  .toolbar button:hover { color: #ff5722; }
+
+  #historyList { list-style: none; max-height: 250px; overflow-y: auto; }
+  #historyList li {
+    display: flex; justify-content: space-between; align-items: center; gap: 10px;
+    padding: 9px 4px; border-bottom: 1px dashed #f3e2cf; font-size: 14.5px;
+  }
+  #historyList li:last-child { border-bottom: none; }
+  .h-name { font-weight: 600; color: #6b4a26; }
+  .h-time { color: #b09576; font-size: 12.5px; white-space: nowrap; }
+  .empty { color: #c4a884; text-align: center; padding: 20px 0; border-bottom: none !important; font-weight: 400 !important; }
+
+  footer { text-align: center; margin-top: 26px; color: #c9a377; font-size: 13px; }
+
+  #toast {
+    position: fixed; left: 50%; bottom: 42px; z-index: 60;
+    transform: translateX(-50%) translateY(16px);
+    background: rgba(60, 40, 20, .88); color: #fff;
+    padding: 10px 24px; border-radius: 999px; font-size: 14px;
+    opacity: 0; transition: .3s; pointer-events: none; white-space: nowrap;
+  }
+  #toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<canvas id="confetti"></canvas>
+
+<main class="wrap">
+  <header>
+    <h1>🍳 今天吃什么？</h1>
+    <p class="subtitle">菜单在手，选择困难交给运气 —— 抽一签，开饭！</p>
+  </header>
+
+  <section class="card stage">
+    <p class="hint" id="hint">点击下方按钮，让晚餐听天由命</p>
+    <div class="display" id="display">？</div>
+    <button class="draw-btn" id="drawBtn">开始抽奖 🎲</button>
+    <label class="avoid"><input type="checkbox" id="avoidRecent" checked>避开最近抽过的菜（连续 3 次）</label>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>我的菜单 <span class="count" id="dishCount"></span></h2>
+      <div class="add-row">
+        <input id="newDish" placeholder="输入菜名，回车添加，比如：啤酒鸭" maxlength="20">
+        <button id="addBtn">添加</button>
+      </div>
+      <ul id="dishList"></ul>
+      <div class="toolbar">
+        <button id="resetBtn">恢复默认菜单</button>
+        <button id="clearHistoryBtn">清空抽取记录</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>抽取记录</h2>
+      <ul id="historyList"></ul>
+    </section>
+  </div>
+
+  <footer>菜单保存在你自己的浏览器里，随时增删你的私房菜 🥢（按空格键也可以抽）</footer>
+</main>
+
+<div id="toast"></div>
+
+<script>
+(function () {
+  'use strict';
+
+  var STORAGE_KEY = 'what-to-eat.v1';
+  var DEFAULT_DISHES = [
+    '红烧肉', '可乐鸡翅', '糖醋排骨', '宫保鸡丁', '鱼香肉丝', '麻婆豆腐',
+    '回锅肉', '水煮肉片', '酸菜鱼', '番茄炒蛋', '青椒肉丝', '酸辣土豆丝',
+    '土豆炖牛肉', '红烧茄子', '干煸四季豆', '白切鸡', '清蒸鲈鱼', '蒜蓉虾',
+    '木须肉', '京酱肉丝', '香菇滑鸡', '咖喱鸡肉', '番茄牛腩', '辣子鸡',
+    '蚝油生菜', '蒜蓉西兰花', '韭菜炒蛋', '冬瓜排骨汤', '玉米排骨汤', '紫菜蛋花汤',
+    '蛋炒饭', '扬州炒饭', '葱油拌面', '炸酱面', '饺子', '火锅', '麻辣香锅', '铁板牛柳'
+  ];
+
+  function load() {
+    var s = {};
+    try { s = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') || {}; } catch (e) { s = {}; }
+    return {
+      dishes: Array.isArray(s.dishes) ? s.dishes : DEFAULT_DISHES.slice(),
+      history: Array.isArray(s.history) ? s.history : [],
+      avoidRecent: s.avoidRecent !== false
+    };
+  }
+  var state = load();
+
+  function save() {
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  var $ = function (id) { return document.getElementById(id); };
+  var display = $('display'), hint = $('hint'), drawBtn = $('drawBtn'),
+      avoidRecentBox = $('avoidRecent'), dishList = $('dishList'), dishCount = $('dishCount'),
+      newDishInput = $('newDish'), historyList = $('historyList'), toastEl = $('toast');
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  var toastTimer = null;
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function () { toastEl.classList.remove('show'); }, 1800);
+  }
+
+  /* ---------- 渲染 ---------- */
+
+  function renderDishes() {
+    dishCount.textContent = '共 ' + state.dishes.length + ' 道';
+    if (!state.dishes.length) {
+      dishList.innerHTML = '<li class="empty">菜单空空如也，先添加一道菜吧</li>';
+      return;
+    }
+    dishList.innerHTML = state.dishes.map(function (d, i) {
+      return '<li class="chip">' + escapeHtml(d) +
+        '<button class="del" data-i="' + i + '" title="删除 ' + escapeHtml(d) + '">×</button></li>';
+    }).join('');
+  }
+
+  function renderHistory() {
+    if (!state.history.length) {
+      historyList.innerHTML = '<li class="empty">还没有记录，快抽一次吧～</li>';
+      return;
+    }
+    historyList.innerHTML = state.history.map(function (h) {
+      var d = new Date(h.ts);
+      var time = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) +
+        ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+      return '<li><span class="h-name">' + escapeHtml(h.name) + '</span>' +
+        '<span class="h-time">' + time + '</span></li>';
+    }).join('');
+  }
+
+  /* ---------- 抽奖 ---------- */
+
+  var rolling = false;
+
+  function draw() {
+    if (rolling) return;
+    if (!state.dishes.length) { toast('菜单是空的，先添加几个菜吧 🍳'); return; }
+
+    var pool = state.dishes.slice();
+    if (avoidRecentBox.checked && state.dishes.length > 3) {
+      var recent = state.history.slice(0, 3).map(function (h) { return h.name; });
+      var filtered = pool.filter(function (d) { return recent.indexOf(d) === -1; });
+      if (filtered.length) pool = filtered;
+    }
+
+    rolling = true;
+    drawBtn.disabled = true;
+    drawBtn.textContent = '命运转轮转动中…';
+    hint.textContent = '午餐还是晚餐，就看这一把！';
+    display.classList.remove('winner');
+    display.classList.add('rolling');
+
+    var steps = 22, i = 0;
+    function step() {
+      display.textContent = pool[Math.floor(Math.random() * pool.length)];
+      i++;
+      if (i < steps) {
+        setTimeout(step, 45 + Math.pow(i / steps, 2.2) * 300); // 越转越慢
+      } else {
+        finish(pool);
+      }
+    }
+    setTimeout(step, 45);
+  }
+
+  function finish(pool) {
+    var winner = pool[Math.floor(Math.random() * pool.length)];
+    display.textContent = winner;
+    display.classList.remove('rolling');
+    display.classList.add('winner');
+
+    hint.textContent = '今晚就吃它！🎉';
+    drawBtn.textContent = '再抽一次 🎲';
+    drawBtn.disabled = false;
+    rolling = false;
+
+    state.history.unshift({ name: winner, ts: Date.now() });
+    if (state.history.length > 200) state.history.length = 200;
+    save();
+    renderHistory();
+    burstConfetti();
+  }
+
+  drawBtn.addEventListener('click', draw);
+
+  document.addEventListener('keydown', function (e) {
+    if (e.code !== 'Space') return;
+    var tag = document.activeElement && document.activeElement.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON' || tag === 'SELECT') return;
+    e.preventDefault();
+    draw();
+  });
+
+  avoidRecentBox.checked = state.avoidRecent;
+  avoidRecentBox.addEventListener('change', function () {
+    state.avoidRecent = avoidRecentBox.checked;
+    save();
+  });
+
+  /* ---------- 菜单管理 ---------- */
+
+  function addDish() {
+    var name = newDishInput.value.trim();
+    if (!name) return;
+    if (state.dishes.indexOf(name) !== -1) { toast('这道菜已经在菜单里啦'); return; }
+    state.dishes.push(name);
+    newDishInput.value = '';
+    save();
+    renderDishes();
+  }
+  $('addBtn').addEventListener('click', addDish);
+  newDishInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') addDish(); });
+
+  dishList.addEventListener('click', function (e) {
+    var btn = e.target.closest('.del');
+    if (!btn) return;
+    var removed = state.dishes.splice(Number(btn.dataset.i), 1);
+    save();
+    renderDishes();
+    toast('已删除「' + removed[0] + '」');
+  });
+
+  $('resetBtn').addEventListener('click', function () {
+    if (!confirm('恢复默认菜单？当前的菜单会被覆盖。')) return;
+    state.dishes = DEFAULT_DISHES.slice();
+    save();
+    renderDishes();
+    toast('已恢复默认菜单');
+  });
+
+  $('clearHistoryBtn').addEventListener('click', function () {
+    if (!state.history.length) { toast('还没有记录哦'); return; }
+    if (!confirm('确定清空所有抽取记录吗？')) return;
+    state.history = [];
+    save();
+    renderHistory();
+    toast('记录已清空');
+  });
+
+  /* ---------- 彩带动画 ---------- */
+
+  var canvas = $('confetti'), ctx = canvas.getContext('2d');
+  var particles = [], running = false;
+  var COLORS = ['#ff6b35', '#ffc93c', '#4ecdc4', '#ff7bac', '#7d80da', '#6bcb77'];
+
+  function resize() { canvas.width = innerWidth; canvas.height = innerHeight; }
+  addEventListener('resize', resize);
+  resize();
+
+  function burstConfetti() {
+    for (var i = 0; i < 90; i++) {
+      particles.push({
+        x: canvas.width / 2 + (Math.random() - 0.5) * 180,
+        y: canvas.height * 0.32,
+        vx: (Math.random() - 0.5) * 10,
+        vy: -(Math.random() * 8 + 3),
+        size: 6 + Math.random() * 6,
+        color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        rot: Math.random() * Math.PI,
+        vr: (Math.random() - 0.5) * 0.3,
+        life: 90 + Math.random() * 40
+      });
+    }
+    if (!running) { running = true; requestAnimationFrame(tick); }
+  }
+
+  function tick() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    particles = particles.filter(function (p) { return p.life > 0 && p.y < canvas.height + 40; });
+    if (!particles.length) { running = false; return; }
+    for (var j = 0; j < particles.length; j++) {
+      var p = particles[j];
+      p.vy += 0.25; p.x += p.vx; p.y += p.vy; p.rot += p.vr; p.life--;
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      ctx.rotate(p.rot);
+      ctx.globalAlpha = Math.min(1, p.life / 40);
+      ctx.fillStyle = p.color;
+      ctx.fillRect(-p.size / 2, -p.size / 2, p.size, p.size * 0.6);
+      ctx.restore();
+    }
+    requestAnimationFrame(tick);
+  }
+
+  /* ---------- 启动 ---------- */
+  renderDishes();
+  renderHistory();
+})();
+</script>
+</body>
+</html>
